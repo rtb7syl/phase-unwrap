@@ -46,26 +46,26 @@ def draw_bbox(img,x,y,w,h):
 '''
 
 
-def draw_bbox(fname):
+def is_RoI_white(img):
     
     # draw rect bbox of dimensions defined by x,y,w,h in the img
     # and returns the img
-    img = cv2.imread(fname)
+    #img = cv2.imread(fname)
 
 
-    if img is None:
+    #if img is None:
 
-        raise RuntimeError
+    #    raise RuntimeError
 
-    print('img shape = ',img.shape)
+    #print('img shape = ',img.shape)
 
-    img=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #img=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    gray = img.copy()
+    #gray = img.copy()
 
     
  
-    cv2.rectangle(gray,(65,47),(120,125),(255,255,255),2)
+    #cv2.rectangle(gray,(65,47),(120,125),(255,255,255),2)
 
 
     img = img[45:130,65:120]
@@ -76,12 +76,32 @@ def draw_bbox(fname):
     num_black_px = ((0 <= img) & (img < 50)).sum()
 
     print("num_white_px = ", num_white_px)
-    print("num_black_px = ", num_black_px) 
+    print("num_black_px = ", num_black_px)
 
-    print("frac = ",num_white_px/num_black_px)
+    if (num_white_px == 0):
 
-    cv2.imshow('img',gray)
-    cv2.waitKey(0)
+        return False
+
+    elif (num_black_px == 0):
+
+        return True
+
+    else:
+
+        white_to_black_ratio = num_white_px/num_black_px 
+
+        print("white_to_black_ratio = ",white_to_black_ratio)
+
+        if (white_to_black_ratio > 1):
+
+            return True
+
+        else:
+
+            return False
+
+    #cv2.imshow('img',gray)
+    #cv2.waitKey(0)
 
 
     
@@ -123,6 +143,8 @@ def find_wrap(fname):
 
     img=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img = cv2.medianBlur(img,5)
+
+    RoI_is_white = is_RoI_white(img)
 
     gray = img.copy()
     
