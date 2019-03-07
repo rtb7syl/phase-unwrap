@@ -1,6 +1,6 @@
 # phase-unwrap
 
-## Phase wrapped outlier detection and correction of cardiac phase velocity MRI images
+## Autonomous phase wrap detection and correction of cardiac phase velocity MRI images
 
 This is about detection of phase wrap in phase velocity MRI images and ultimately correcting it.
 
@@ -18,5 +18,7 @@ The left frame denotes the original frame, the right is the wrap detected frame:
 Corrected phase wrap :  
 The left frame denotes the original frame, the right one is the corrected wrap frame:  
 ![alt text](https://github.com/rtb7syl/phase-unwrap/blob/master/imgs/wrap_corrected_compared/37.jpg)
+
+
 
 
