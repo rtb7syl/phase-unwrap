@@ -37,7 +37,7 @@ def identify_phasewrap_gray(gray):
         
         return (x,y,w,h)
 
-    
+'''
 def draw_bbox(img,x,y,w,h):
     
     # draw rect bbox of dimensions defined by x,y,w,h in the img
@@ -46,6 +46,65 @@ def draw_bbox(img,x,y,w,h):
     cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,255),2)
     
     return img
+'''
+
+
+def is_RoI_white(img):
+    
+    # draw rect bbox of dimensions defined by x,y,w,h in the img
+    # and returns the img
+    #img = cv2.imread(fname)
+
+
+    #if img is None:
+
+    #    raise RuntimeError
+
+    #print('img shape = ',img.shape)
+
+    #img=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    #gray = img.copy()
+
+    
+ 
+    #cv2.rectangle(gray,(65,47),(120,125),(255,255,255),2)
+
+
+    img = img[45:130,65:120]
+
+    num_white_px = ((205 < img) & (img <= 255)).sum()
+
+
+    num_black_px = ((0 <= img) & (img < 50)).sum()
+
+    print("num_white_px = ", num_white_px)
+    print("num_black_px = ", num_black_px)
+
+    if (num_white_px == 0):
+
+        return False
+
+    elif (num_black_px == 0):
+
+        return True
+
+    else:
+
+        white_to_black_ratio = num_white_px/num_black_px 
+
+        print("white_to_black_ratio = ",white_to_black_ratio)
+
+        if (white_to_black_ratio > 1):
+
+            return True
+
+        else:
+
+            return False
+
+    #cv2.imshow('img',gray)
+    #cv2.waitKey(0)
 
 
     
@@ -70,6 +129,7 @@ def load_image_and_get_roi(dir_,fname):
     x,y,w,h = identify_phasewrap_gray(gray)
 
     return (img,x,y,w,h)
+
 
 
 def get_wrapped_coords_as_list(csv_path):
@@ -599,6 +659,7 @@ def grab_wrapped_and_unwrapped_coords_and_save_to_csv(gray,RoI_is_white,x,y,w,h,
 
 
 def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
+
     
 
 
@@ -612,6 +673,7 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
     print('img shape = ',img.shape)
 
     img=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
 
     RoI_is_white = is_RoI_white(img)
     print('RoI_is_white',RoI_is_white)
@@ -628,6 +690,7 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
     img = img[40:130,70:130]
 
     img = cv2.medianBlur(img,5)
+
 
 
 
@@ -656,9 +719,11 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
     #cv2.imshow('thresh',thresh)
     #cv2.waitKey(0)
     
+
     im2,contours,hierarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
     contours = sorted(contours,key=cv2.contourArea,reverse=True)[:3]
+
 
     wrapped_cnts = []
 
@@ -666,10 +731,12 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
     
     total_num_of_wrapped_pixels = 0
 
+
     for c in contours:
         #c = max(contours, key = cv2.contourArea)
 
         cnt_area = cv2.contourArea(c)
+
         print('cnt area = ',cnt_area)
 
         x,y,w,h = cv2.boundingRect(c)
@@ -690,6 +757,7 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
             print('bbox_area = ',str(w*h))
 
             #scaling the coordinates of the crop img to fit in the original img
+
             x = x + 70
             y = y + 40
 
@@ -756,10 +824,15 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
     
 
     '''
+
+    cv2.rectangle(gray,(x,y),(x+w,y+h),(255,255,255),2)
+
+
     # show the images np.hstack([hsv,rgb])
     cv2.imshow("Result", gray)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
     '''
 
 
@@ -838,5 +911,23 @@ def find_wrap(fname,wrap_out_fname,unwrap_out_fname,contour_boxes_fname):
 
 
 
+
+if __name__ == "__main__":
+    '''
+    #dir_ = "../../books/vortex_data/vortex/vortex/4ch/intra-subject/scan_5/phase_1/x/registered-resized-1/png"
+    
+    dir_ = "../../books/vortex_data/vortex/vortex/4ch/inter-subject/subject_8/phase_1/y/registered-resized-1/png"
+    #dir_ = "./imgs/gray_frames"
+    fnames = os.listdir(dir_)
+
+    for fname in fnames:
+
+        impath = os.path.join(dir_,fname)
+        print(impath)
+
+        draw_bbox(impath)
+        find_wrap(impath)
+
+    '''
 
 
