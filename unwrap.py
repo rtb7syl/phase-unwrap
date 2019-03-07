@@ -37,9 +37,10 @@ def correct_phase_wrap_median_blur(img,x,y,w,h):
 
 
 
-def AdaBlur(img,wrapped_coords):
+def AdaBlur(phase_vals_matrix,RoI_is_white,wrapped_coords,unwrapped_coords):
 
-
+    #wrapped_coords and unwrapped_coords in a list of tuples
+    #where each tuple is a (x,y) coord
 
     # mapping from each wrapped coord to it's corressponding delta
     #first we compute delta on a 3*3 grid with the wrapped coord at the centre
@@ -47,6 +48,7 @@ def AdaBlur(img,wrapped_coords):
     #obviously then ,delta has to be updated
     delta_dict = {}
 
+    print('....length....',len(wrapped_coords))
 
 
     for wrapped_coord in wrapped_coords:
@@ -96,7 +98,20 @@ def AdaBlur(img,wrapped_coords):
             #wrapped_coord_x = wrapped_coord[0]
             #wrapped_coord_y = wrapped_coord[1]
 
-            img = replace_wrapped_pixel_with_median_pixel(img,wrapped_coord_x,wrapped_coord_y,grid_size)
+            #img = replace_wrapped_pixel_with_median_pixel(img,wrapped_coord_x,wrapped_coord_y,grid_size)
+            
+            grid_x,grid_y = get_grid_coords(wrapped_coord_x,wrapped_coord_y,grid_size)
+
+            #correct the wrapped coord
+            phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords)
+
+
+            #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+            #appending that to unwrapped_coords list
+
+            wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+            unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
 
 
 
@@ -111,45 +126,159 @@ def AdaBlur(img,wrapped_coords):
 
         if (delta < 0):
 
-            grid_size = 5
+            #we'll first experiment by taking the same window size ie 3,
+            #but with different strides
 
-            #find the leftmost,topmost coord of the grid
-            grid_x,grid_y = get_grid_coords(wrapped_coord_x,wrapped_coord_y,grid_size)
-
-            print("grid_x,grid_y",grid_x,grid_y)
-
-            #delta = #unwrapped coords - #wrapped coords, in the grid
-            delta = compute_delta(grid_x,grid_y,grid_size,wrapped_coords)
-            print("grid 5 delta",delta)
-
-            if (delta >= 0):
-
-                img = replace_wrapped_pixel_with_median_pixel(img,wrapped_coord_x,wrapped_coord_y,grid_size)
-
-            elif (delta < 0):
-
-                grid_size = 7
+            grid_size = 3
 
 
-                #img = replace_wrapped_pixel_with_median_pixel(img,wrapped_coord_x,wrapped_coord_y,grid_size)
+            #we'll be proposing a number of grids by taking different strides
+            #and try to find whether any of those grids has delta > 0
 
+            is_any_of_the_proposed_grids_a_candidate,grid_x,grid_y = take_different_strides_and_find_candidate(wrapped_coord_x,
+
+                                                                                                wrapped_coord_y,
+
+                                                                                                grid_size,
+                                                                                                
+                                                                                                wrapped_coords
+                                                                                            )
+
+            if (is_any_of_the_proposed_grids_a_candidate):
+                #if any one of them is a candidate,correct the wrapped_coord based on that grid
+
+                phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords)
+
+                #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+                #appending that to unwrapped_coords list
+
+                wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+                unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
+            else:
+
+                #take a bigger grid
+
+                grid_size = 5
+
+                #find the leftmost,topmost coord of the grid
+                grid_x,grid_y = get_grid_coords(wrapped_coord_x,wrapped_coord_y,grid_size)
+
+                print("grid_x,grid_y 5",grid_x,grid_y)
+
+                #delta = #unwrapped coords - #wrapped coords, in the grid
                 delta = compute_delta(grid_x,grid_y,grid_size,wrapped_coords)
-                print("grid 7 delta",delta)
+                print("grid 5 delta",delta)
 
                 if (delta >= 0):
 
-                    img = replace_wrapped_pixel_with_median_pixel(img,wrapped_coord_x,wrapped_coord_y,grid_size)
+                    phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords)
+
+
+                    #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+                    #appending that to unwrapped_coords list
+
+                    wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+                    unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
 
                 elif (delta < 0):
 
-                    #replace wrapped coord with max unwrapped pixel value
+                    #we'll be proposing a number of grids by taking different strides
+                    #and try to find whether any of those grids has delta > 0
 
-                    img = replace_wrapped_pixel_with_max_unwrapped_pixel(img,delta,wrapped_coord_x,wrapped_coord_y,grid_size)
+                    is_any_of_the_proposed_grids_a_candidate,grid_x,grid_y = take_different_strides_and_find_candidate(wrapped_coord_x,
+
+                                                                                                        wrapped_coord_y,
+
+                                                                                                        grid_size,
+                                                                                                        
+                                                                                                        wrapped_coords
+                                                                                                    )
+
+                    if (is_any_of_the_proposed_grids_a_candidate):
+                        #if any one of them is a candidate,correct the wrapped_coord based on that grid
+
+                        phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords)
 
 
 
+                        #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+                        #appending that to unwrapped_coords list
+
+                        wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+                        unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
+
+                    else:
+
+                        #take a bigger grid
+
+                        grid_size = 7
+
+
+                        #find the leftmost,topmost coord of the grid
+                        grid_x,grid_y = get_grid_coords(wrapped_coord_x,wrapped_coord_y,grid_size)
+
+                        print("grid_x,grid_y 7",grid_x,grid_y)
+
+                        delta = compute_delta(grid_x,grid_y,grid_size,wrapped_coords)
+                        print("grid 7 delta",delta)
+
+                        if (delta >= 0):
+
+                            phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords)
+
+
+                            #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+                            #appending that to unwrapped_coords list
+
+                            wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+                            unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
+                        elif (delta < 0):
+
+                            #we'll be proposing a number of grids by taking different strides
+                            #and try to find whether any of those grids has delta > 0
+
+                            is_any_of_the_proposed_grids_a_candidate,stride_grid_x,stride_grid_y = take_different_strides_and_find_candidate(wrapped_coord_x,
+
+                                                                                                                wrapped_coord_y,
+
+                                                                                                                grid_size,
+                                                                                                                
+                                                                                                                wrapped_coords
+                                                                                                            )
+
+                            if (is_any_of_the_proposed_grids_a_candidate):
+                                #if any one of them is a candidate,correct the wrapped_coord based on that grid
+
+                                phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords)
+
+
+                                #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+                                #appending that to unwrapped_coords list
+
+                                wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+                                unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
+                            else:
+
+                                #fallback option, if everything else fails
+                                #calculate the mean of unwrapped pixels in the grid instead of the median
+
+                                phase_vals_matrix = correct_wrapped_coord(phase_vals_matrix,wrapped_coord_x,wrapped_coord_y,grid_x,grid_y,grid_size,RoI_is_white,unwrapped_coords,wrapped_coords,fallback=True)
+
+                                #removing the wrapped coord from wrapped_coords list since it's unwrapped now ,and
+                                #appending that to unwrapped_coords list
+
+                                wrapped_coords.remove((wrapped_coord_x,wrapped_coord_y))
+                                unwrapped_coords.append((wrapped_coord_x,wrapped_coord_y))
+
+
+    print('..............length..........',len(wrapped_coords))
     
-    return img
+    return phase_vals_matrix
 
 
 
@@ -166,7 +295,7 @@ def AdaBlur(img,wrapped_coords):
 
 
 
-
+'''
 
 def correct_phase_wrap_ada_blur(img,csv_path,padding,x,y,w,h):
 
@@ -215,7 +344,7 @@ def main():
     
 
     
-    '''
+    
     for fname in os.listdir(dir_):
         
         out_fname = fname.split('.')[0] + '.csv'
@@ -226,7 +355,7 @@ def main():
         
         check_img_for_wrap_and_write_coords_to_csv(dir_,fname,out_fname,sq_area_thresh,white_thresh)
         
-    '''
+    
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     dir_ = './imgs/gray_frames'
@@ -276,3 +405,4 @@ def main():
         
 #load_image_and_get_roi('./gray_frames','38.jpg')       
 main()
+'''

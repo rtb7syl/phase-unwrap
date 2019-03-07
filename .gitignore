@@ -1,6 +1,11 @@
 # Don't track content of these folders
+data/
+imgs/
 imgs_etc/
 processed/
-
+results/
+wrap_corrected/
+*.png
 *.pyc
 *.zip
+*.csv
